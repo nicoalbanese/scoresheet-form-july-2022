@@ -1,10 +1,13 @@
 import { useState } from "react";
 import FormSection from "../components/FormSection";
 import { addToAirtable, getTeam, searchForBusiness } from "../lib/Airtable";
+import { useRouter } from "next/router";
 
 import { QUESTIONS } from "../lib/Questions";
 
 export default function Home() {
+  const router = useRouter();
+
   const [openStatus, setOpenStatus] = useState(false);
 
   const [reviewer, setReviewer] = useState("recMrhUbGHq5U2NLc");
@@ -12,6 +15,8 @@ export default function Home() {
   const [company, setCompany] = useState({ name: "", id: "" });
 
   const [questions, setQuestions] = useState(QUESTIONS);
+
+  const [authenticated, setAuthenticated] = useState(false);
 
   const questionUpdated = (question) => {
     // console.log(question);
@@ -49,7 +54,18 @@ export default function Home() {
     setCompany({ name: "", id: "" });
   };
 
-  const handleFullSubmission = () => {
+  const handleAuthentication = (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target); 
+    const formData = Object.fromEntries(form.entries()); 
+    console.log(formData);
+    if (formData.password == process.env.NEXT_PUBLIC_SITE_PASSWORD) {
+      setAuthenticated(true);
+    }
+    event.target.reset();
+  }
+
+  const handleFullSubmission = async () => {
     if ((reviewer, company)) {
       // console.log(reviewer, company, questions);
 
@@ -66,8 +82,12 @@ export default function Home() {
       // questions.map((section) => {
       //   formattedQuestions.push(...section.questions);
       // });
-
-      addToAirtable({ reviewer, company, formattedQuestions });
+      const newScore = await addToAirtable({
+        reviewer,
+        company,
+        formattedQuestions,
+      });
+      location.assign(newScore);
     } else {
       alert("Both scorer and company is required.");
     }
@@ -75,86 +95,99 @@ export default function Home() {
 
   return (
     <main className="h-screen w-full">
-      <div
-        id="wrapper"
-        className="max-w-3xl mx-auto bg-white p-6 shadow-xl mt-2"
-      >
-        <div id="inner-wrapper" className="w-[600px] mx-auto">
-          {/* headline */}
-          <div className="w-full flex items-center justify-center py-4">
-            <h1>Ascension Score Sheet</h1>
-          </div>
-          {/* scorer section */}
-          <div className="flex flex-col">
-            <label
-              htmlFor="scorer"
-              className="text-gray-500 font-bold uppercase text-xs pb-1"
-            >
-              Scorer
-            </label>
-            <div className="inline-block relative">
-              <select
-                name="scorer"
-                id=""
-                onChange={handleChangeScorer}
-                defaultValue="Nico Albanese"
-                className="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline"
+      {authenticated ? (
+        <div
+          id="wrapper"
+          className="max-w-3xl mx-auto bg-white p-6 shadow-xl mt-2"
+        >
+          <div id="inner-wrapper" className="w-[600px] mx-auto">
+            {/* headline */}
+            <div className="w-full flex items-center justify-center py-4">
+              <h1>Ascension Score Sheet</h1>
+            </div>
+            {/* scorer section */}
+            <div className="flex flex-col">
+              <label
+                htmlFor="scorer"
+                className="text-gray-500 font-bold uppercase text-xs pb-1"
               >
-                <option value="recMrhUbGHq5U2NLc">Nico</option>
-                <option value="recjgPNfu8ZOeuoe3">Remy</option>
-                <option value="recX0rr5sM9Ck3jJL">Sonia</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg
-                  className="fill-current h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
+                Scorer
+              </label>
+              <div className="inline-block relative">
+                <select
+                  name="scorer"
+                  id=""
+                  onChange={handleChangeScorer}
+                  defaultValue="Nico Albanese"
+                  className="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline"
                 >
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                </svg>
+                  <option value="recMrhUbGHq5U2NLc">Nico</option>
+                  <option value="recjgPNfu8ZOeuoe3">Remy</option>
+                  <option value="recX0rr5sM9Ck3jJL">Sonia</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                  <svg
+                    className="fill-current h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            {/* select company section */}
+            {company.name ? (
+              <SelectedCompany company={company} resetCompany={resetCompany} />
+            ) : (
+              <CompanySearch setCompany={setCompany} />
+            )}
+            {/* question section */}
+            <div className="my-6 drop-shadow rounded-md">
+              <div className="flex justify-end mb-2">
+                <button
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm"
+                  onClick={() => {
+                    setOpenStatus(!openStatus);
+                  }}
+                >
+                  {openStatus == true ? "Collapse" : "Expand"}
+                </button>
+              </div>
+              {questions &&
+                questions.map((section, i) => (
+                  <FormSection
+                    key={i}
+                    title={section.section}
+                    questions={section.questions}
+                    openStatus={openStatus}
+                    questionUpdated={questionUpdated}
+                  />
+                ))}
+              <div className="w-full py-4 flex items-center justify-center">
+                <button
+                  onClick={handleFullSubmission}
+                  className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-4 rounded"
+                >
+                  Submit
+                </button>
               </div>
             </div>
           </div>
-          {/* select company section */}
-          {company.name ? (
-            <SelectedCompany company={company} resetCompany={resetCompany} />
-          ) : (
-            <CompanySearch setCompany={setCompany} />
-          )}
-          {/* question section */}
-          <div className="my-6 drop-shadow rounded-md">
-            <div className="flex justify-end mb-2">
-              <button
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm"
-                onClick={() => {
-                  setOpenStatus(!openStatus);
-                }}
-              >
-                {openStatus == true ? "Collapse" : "Expand"}
-              </button>
-            </div>
-            {questions &&
-              questions.map((section, i) => (
-                <FormSection
-                  key={i}
-                  title={section.section}
-                  questions={section.questions}
-                  openStatus={openStatus}
-                  questionUpdated={questionUpdated}
-                />
-              ))}
-            <div className="w-full py-4 flex items-center justify-center">
-              <button
-                onClick={handleFullSubmission}
-                className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-4 rounded"
-              >
-                Submit
-              </button>
-            </div>
-          </div>
+          <div></div>
         </div>
-        <div></div>
-      </div>
+      ) : (
+        <div className="flex items-center justify-center h-full">
+          <form action="" onSubmit={handleAuthentication}>
+            <input
+              type="password"
+              name="password"
+              placeholder="password"
+              className="py-2 px-4"
+            />
+          </form>
+        </div>
+      )}
     </main>
   );
 }
