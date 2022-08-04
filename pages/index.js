@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FormSection from "../components/FormSection";
 import { addToAirtable, getTeam, searchForBusiness } from "../lib/Airtable";
 import { useRouter } from "next/router";
 
 import { QUESTIONS } from "../lib/Questions";
+
+import Cookies from 'js-cookie'
 
 export default function Home() {
   const router = useRouter();
@@ -61,9 +63,18 @@ export default function Home() {
     console.log(formData);
     if (formData.password == process.env.NEXT_PUBLIC_SITE_PASSWORD) {
       setAuthenticated(true);
+      Cookies.set('authenticated', true)
     }
     event.target.reset();
   }
+
+  useEffect(() => {
+    if (Cookies.get('authenticated') == "true") {
+      setAuthenticated(true)
+    } else {
+      setAuthenticated(false)
+    }
+  }, [])
 
   const handleFullSubmission = async () => {
     if ((reviewer, company)) {
