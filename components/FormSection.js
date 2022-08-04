@@ -8,7 +8,7 @@ const FormSection = ({
 }) => {
   return (
     <details
-      className="bg-gray-300 open:bg-blue-100 duration-300"
+      className="bg-gray-300 hover:bg-gray-100 open:bg-blue-200 duration-300"
       open={openStatus}
     >
       <summary className="select-none bg-inherit px-5 py-3 text-lg cursor-pointer">
