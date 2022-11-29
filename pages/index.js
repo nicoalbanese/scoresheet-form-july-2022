@@ -135,6 +135,7 @@ export default function Home() {
                   <option value="recMrhUbGHq5U2NLc">Nico</option>
                   <option value="recjgPNfu8ZOeuoe3">Remy</option>
                   <option value="recX0rr5sM9Ck3jJL">Sonia</option>
+                  <option value="recpP3sZcrNfvxvXk">Alex H</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <svg
